@@ -37,6 +37,19 @@ export const notesApi = {
     }
   },
 
+  // Marcar/desmarcar como concluída
+  toggleComplete: async (noteId, completed) => {
+    try {
+      const response = await axios.patch(`${API}/notes/${noteId}/toggle-complete`, {
+        completed
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao alterar status:', error);
+      throw new Error('Falha ao alterar status da anotação');
+    }
+  },
+
   // Excluir anotação
   deleteNote: async (noteId) => {
     try {

@@ -29,6 +29,7 @@ class Note(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     content: str
+    completed: bool = Field(default=False)
     createdAt: datetime = Field(default_factory=datetime.utcnow)
     updatedAt: datetime = Field(default_factory=datetime.utcnow)
 
@@ -39,6 +40,10 @@ class NoteCreate(BaseModel):
 class NoteUpdate(BaseModel):
     title: str
     content: str
+    completed: bool = None
+
+class NoteToggleComplete(BaseModel):
+    completed: bool
 
 class StatusCheck(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -86,8 +91,15 @@ async def update_note(note_id: str, note_data: NoteUpdate):
         if not existing_note:
             raise HTTPException(status_code=404, detail="Anotação não encontrada")
         
-        # Update data
-        update_data = note_data.dict()
+        # Update data - only include fields that are not None
+        update_data = {}
+        if note_data.title is not None:
+            update_data['title'] = note_data.title
+        if note_data.content is not None:
+            update_data['content'] = note_data.content
+        if note_data.completed is not None:
+            update_data['completed'] = note_data.completed
+            
         update_data['updatedAt'] = datetime.utcnow().isoformat()
         
         await db.notes.update_one(
@@ -104,6 +116,36 @@ async def update_note(note_id: str, note_data: NoteUpdate):
     except Exception as e:
         logger.error(f"Erro ao atualizar anotação: {e}")
         raise HTTPException(status_code=500, detail="Erro ao atualizar anotação")
+
+@api_router.patch("/notes/{note_id}/toggle-complete", response_model=Note)
+async def toggle_note_complete(note_id: str, toggle_data: NoteToggleComplete):
+    """Marcar/desmarcar anotação como concluída"""
+    try:
+        # Check if note exists
+        existing_note = await db.notes.find_one({"id": note_id})
+        if not existing_note:
+            raise HTTPException(status_code=404, detail="Anotação não encontrada")
+        
+        # Update completion status
+        update_data = {
+            'completed': toggle_data.completed,
+            'updatedAt': datetime.utcnow().isoformat()
+        }
+        
+        await db.notes.update_one(
+            {"id": note_id}, 
+            {"$set": update_data}
+        )
+        
+        # Return updated note
+        updated_note = await db.notes.find_one({"id": note_id})
+        logger.info(f"Status de conclusão alterado para {toggle_data.completed}: {note_id}")
+        return Note(**updated_note)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao alterar status de conclusão: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao alterar status de conclusão")
 
 @api_router.delete("/notes/{note_id}")
 async def delete_note(note_id: str):
@@ -172,6 +214,7 @@ async def startup_event():
                     "id": str(uuid.uuid4()),
                     "title": "Lista de compras",
                     "content": "Leite, Pão, Ovos, Arroz, Feijão, Carne, Verduras, Frutas. Lembrar de comprar também produtos de limpeza.",
+                    "completed": False,
                     "createdAt": datetime.utcnow().isoformat(),
                     "updatedAt": datetime.utcnow().isoformat()
                 },
@@ -179,6 +222,7 @@ async def startup_event():
                     "id": str(uuid.uuid4()),
                     "title": "Reunião de trabalho",
                     "content": "Reunião às 14h com a equipe de desenvolvimento. Pontos a discutir: projeto novo, prazos, recursos necessários.",
+                    "completed": True,
                     "createdAt": datetime.utcnow().isoformat(),
                     "updatedAt": datetime.utcnow().isoformat()
                 },
@@ -186,6 +230,7 @@ async def startup_event():
                     "id": str(uuid.uuid4()),
                     "title": "Ideias para o final de semana", 
                     "content": "Visitar o parque com a família, assistir filme no cinema, fazer churrasco com os amigos, ler o livro novo.",
+                    "completed": False,
                     "createdAt": datetime.utcnow().isoformat(),
                     "updatedAt": datetime.utcnow().isoformat()
                 },
@@ -193,6 +238,7 @@ async def startup_event():
                     "id": str(uuid.uuid4()),
                     "title": "Exercícios da semana",
                     "content": "Segunda: Caminhada 30min, Terça: Academia, Quarta: Yoga, Quinta: Corrida, Sexta: Academia, Sábado: Bike.",
+                    "completed": False,
                     "createdAt": datetime.utcnow().isoformat(),
                     "updatedAt": datetime.utcnow().isoformat()
                 },
@@ -200,6 +246,7 @@ async def startup_event():
                     "id": str(uuid.uuid4()),
                     "title": "Lembretes importantes",
                     "content": "Consulta médica na próxima terça (9h), renovar CNH, pagar conta de luz, ligar para o dentista.",
+                    "completed": False,
                     "createdAt": datetime.utcnow().isoformat(),
                     "updatedAt": datetime.utcnow().isoformat()
                 }

@@ -3,7 +3,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
-import { Plus, Search, BookOpen, Loader2 } from "lucide-react";
+import { Plus, Search, BookOpen, Loader2, CheckCircle2, Circle } from "lucide-react";
 import { toast } from "../hooks/use-toast";
 import { Toaster } from "../components/ui/toaster";
 import NoteCard from "../components/NoteCard";
@@ -17,6 +17,7 @@ const NotesPage = () => {
   const [filteredNotes, setFilteredNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("all"); // all, completed, pending
 
   // Carregar anotações do backend
   const loadNotes = async () => {
@@ -46,17 +47,26 @@ const NotesPage = () => {
   }, []);
 
   useEffect(() => {
-    // Filtrar notas baseado na busca
+    // Filtrar notas baseado na busca e status
+    let filtered = notes;
+
+    // Filtrar por termo de busca
     if (searchTerm.trim()) {
-      const filtered = notes.filter(note => 
+      filtered = filtered.filter(note => 
         note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         note.content.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredNotes(filtered);
-    } else {
-      setFilteredNotes(notes);
     }
-  }, [notes, searchTerm]);
+
+    // Filtrar por status de conclusão
+    if (filterStatus === "completed") {
+      filtered = filtered.filter(note => note.completed);
+    } else if (filterStatus === "pending") {
+      filtered = filtered.filter(note => !note.completed);
+    }
+
+    setFilteredNotes(filtered);
+  }, [notes, searchTerm, filterStatus]);
 
   const handleAddNote = async (noteData) => {
     try {
@@ -113,6 +123,31 @@ const NotesPage = () => {
     }
   };
 
+  const handleToggleComplete = async (noteId, completed) => {
+    try {
+      const updatedNote = await notesApi.toggleComplete(noteId, completed);
+      setNotes(prev => prev.map(note => 
+        note.id === noteId ? updatedNote : note
+      ));
+      toast({
+        title: completed ? "Anotação concluída!" : "Anotação reativada",
+        description: completed 
+          ? "Parabéns! Você completou esta anotação." 
+          : "Anotação marcada como pendente novamente.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao alterar status",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Calcular estatísticas
+  const completedCount = notes.filter(note => note.completed).length;
+  const pendingCount = notes.length - completedCount;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -153,11 +188,25 @@ const NotesPage = () => {
             </div>
             <h1 className="text-4xl font-bold text-slate-900">Minhas Anotações</h1>
           </div>
-          <p className="text-slate-600 text-lg">Organize suas ideias e pensamentos do dia a dia</p>
+          <p className="text-slate-600 text-lg mb-4">Organize suas ideias e pensamentos do dia a dia</p>
+          
+          {/* Estatísticas */}
+          {notes.length > 0 && (
+            <div className="flex justify-center gap-6 text-sm">
+              <div className="flex items-center gap-1">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <span className="text-green-600 font-medium">{completedCount} concluídas</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Circle className="h-4 w-4 text-slate-500" />
+                <span className="text-slate-500">{pendingCount} pendentes</span>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search and Filters */}
+        <div className="mb-6 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
             <Input
@@ -166,6 +215,36 @@ const NotesPage = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 h-12 text-lg border-slate-200 focus:border-slate-400 transition-colors"
             />
+          </div>
+
+          {/* Filter Buttons */}
+          <div className="flex justify-center gap-2">
+            <Button
+              size="sm"
+              variant={filterStatus === "all" ? "default" : "outline"}
+              onClick={() => setFilterStatus("all")}
+              className="h-9"
+            >
+              Todas ({notes.length})
+            </Button>
+            <Button
+              size="sm"
+              variant={filterStatus === "pending" ? "default" : "outline"}
+              onClick={() => setFilterStatus("pending")}
+              className="h-9"
+            >
+              <Circle className="mr-1 h-4 w-4" />
+              Pendentes ({pendingCount})
+            </Button>
+            <Button
+              size="sm"
+              variant={filterStatus === "completed" ? "default" : "outline"}
+              onClick={() => setFilterStatus("completed")}
+              className="h-9"
+            >
+              <CheckCircle2 className="mr-1 h-4 w-4" />
+              Concluídas ({completedCount})
+            </Button>
           </div>
         </div>
 
@@ -197,11 +276,18 @@ const NotesPage = () => {
               <BookOpen className="h-16 w-16 mx-auto text-slate-400" />
             </div>
             <h3 className="text-xl font-semibold text-slate-600 mb-2">
-              {searchTerm ? 'Nenhuma nota encontrada' : 'Nenhuma anotação ainda'}
+              {searchTerm || filterStatus !== "all" 
+                ? 'Nenhuma nota encontrada' 
+                : 'Nenhuma anotação ainda'
+              }
             </h3>
             <p className="text-slate-500">
               {searchTerm 
-                ? 'Tente buscar por outros termos' 
+                ? 'Tente buscar por outros termos'
+                : filterStatus === "completed"
+                ? 'Você ainda não concluiu nenhuma anotação'
+                : filterStatus === "pending"
+                ? 'Todas as suas anotações estão concluídas!'
                 : 'Clique em "Nova Anotação" para começar'
               }
             </p>
@@ -214,6 +300,7 @@ const NotesPage = () => {
                 note={note}
                 onDelete={handleDeleteNote}
                 onEdit={handleEditNote}
+                onToggleComplete={handleToggleComplete}
               />
             ))}
           </div>
