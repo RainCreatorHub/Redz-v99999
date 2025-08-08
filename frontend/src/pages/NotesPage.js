@@ -1,0 +1,157 @@
+import React, { useState, useEffect } from "react";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
+import { Plus, Search, BookOpen } from "lucide-react";
+import { toast } from "../hooks/use-toast";
+import { Toaster } from "../components/ui/toaster";
+import NoteCard from "../components/NoteCard";
+import AddNoteForm from "../components/AddNoteForm";
+import { mockNotes } from "../data/mock";
+
+const NotesPage = () => {
+  const [notes, setNotes] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [filteredNotes, setFilteredNotes] = useState([]);
+
+  useEffect(() => {
+    // Simular carregamento de dados do backend
+    setNotes(mockNotes);
+  }, []);
+
+  useEffect(() => {
+    // Filtrar notas baseado na busca
+    if (searchTerm.trim()) {
+      const filtered = notes.filter(note => 
+        note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        note.content.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredNotes(filtered);
+    } else {
+      setFilteredNotes(notes);
+    }
+  }, [notes, searchTerm]);
+
+  const handleAddNote = (noteData) => {
+    const newNote = {
+      id: Date.now().toString(),
+      title: noteData.title,
+      content: noteData.content,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    setNotes(prev => [newNote, ...prev]);
+    setShowAddForm(false);
+    toast({
+      title: "Nota criada!",
+      description: "Sua anotação foi salva com sucesso.",
+    });
+  };
+
+  const handleDeleteNote = (noteId) => {
+    setNotes(prev => prev.filter(note => note.id !== noteId));
+    toast({
+      title: "Nota excluída",
+      description: "A anotação foi removida.",
+      variant: "destructive",
+    });
+  };
+
+  const handleEditNote = (noteId, updatedData) => {
+    setNotes(prev => prev.map(note => 
+      note.id === noteId 
+        ? { ...note, ...updatedData, updatedAt: new Date().toISOString() }
+        : note
+    ));
+    toast({
+      title: "Nota atualizada!",
+      description: "Suas alterações foram salvas.",
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="p-3 bg-slate-900 rounded-2xl shadow-lg">
+              <BookOpen className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold text-slate-900">Minhas Anotações</h1>
+          </div>
+          <p className="text-slate-600 text-lg">Organize suas ideias e pensamentos do dia a dia</p>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+            <Input
+              placeholder="Buscar nas suas anotações..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-12 text-lg border-slate-200 focus:border-slate-400 transition-colors"
+            />
+          </div>
+        </div>
+
+        {/* Add Note Button */}
+        <div className="mb-8 flex justify-center">
+          <Button 
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="h-12 px-6 text-lg bg-slate-900 hover:bg-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            {showAddForm ? 'Cancelar' : 'Nova Anotação'}
+          </Button>
+        </div>
+
+        {/* Add Note Form */}
+        {showAddForm && (
+          <div className="mb-8 animate-in fade-in duration-300">
+            <AddNoteForm 
+              onSubmit={handleAddNote}
+              onCancel={() => setShowAddForm(false)}
+            />
+          </div>
+        )}
+
+        {/* Notes Grid */}
+        {filteredNotes.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="mb-4 opacity-50">
+              <BookOpen className="h-16 w-16 mx-auto text-slate-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-slate-600 mb-2">
+              {searchTerm ? 'Nenhuma nota encontrada' : 'Nenhuma anotação ainda'}
+            </h3>
+            <p className="text-slate-500">
+              {searchTerm 
+                ? 'Tente buscar por outros termos' 
+                : 'Clique em "Nova Anotação" para começar'
+              }
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredNotes.map((note) => (
+              <NoteCard
+                key={note.id}
+                note={note}
+                onDelete={handleDeleteNote}
+                onEdit={handleEditNote}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      <Toaster />
+    </div>
+  );
+};
+
+export default NotesPage;
