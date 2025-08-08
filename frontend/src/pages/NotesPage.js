@@ -3,7 +3,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
-import { Plus, Search, BookOpen, Loader2, CheckCircle2, Circle } from "lucide-react";
+import { Plus, Search, CheckSquare, Loader2, CheckCircle2, Circle } from "lucide-react";
 import { toast } from "../hooks/use-toast";
 import { Toaster } from "../components/ui/toaster";
 import NoteCard from "../components/NoteCard";
@@ -19,7 +19,7 @@ const NotesPage = () => {
   const [error, setError] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all"); // all, completed, pending
 
-  // Carregar anotações do backend
+  // Carregar tarefas do backend
   const loadNotes = async () => {
     try {
       setLoading(true);
@@ -27,8 +27,8 @@ const NotesPage = () => {
       const notesData = await notesApi.getAllNotes();
       setNotes(notesData);
       toast({
-        title: "Anotações carregadas!",
-        description: `${notesData.length} anotação(ões) encontrada(s).`,
+        title: "Tarefas carregadas!",
+        description: `${notesData.length} tarefa(s) encontrada(s).`,
       });
     } catch (error) {
       setError(error.message);
@@ -47,7 +47,7 @@ const NotesPage = () => {
   }, []);
 
   useEffect(() => {
-    // Filtrar notas baseado na busca e status
+    // Filtrar tarefas baseado na busca e status
     let filtered = notes;
 
     // Filtrar por termo de busca
@@ -74,8 +74,8 @@ const NotesPage = () => {
       setNotes(prev => [newNote, ...prev]);
       setShowAddForm(false);
       toast({
-        title: "Nota criada!",
-        description: "Sua anotação foi salva permanentemente.",
+        title: "Tarefa criada!",
+        description: "Sua tarefa foi salva permanentemente.",
       });
     } catch (error) {
       toast({
@@ -91,8 +91,8 @@ const NotesPage = () => {
       await notesApi.deleteNote(noteId);
       setNotes(prev => prev.filter(note => note.id !== noteId));
       toast({
-        title: "Nota excluída",
-        description: "A anotação foi removida permanentemente.",
+        title: "Tarefa excluída",
+        description: "A tarefa foi removida permanentemente.",
         variant: "destructive",
       });
     } catch (error) {
@@ -111,7 +111,7 @@ const NotesPage = () => {
         note.id === noteId ? updatedNote : note
       ));
       toast({
-        title: "Nota atualizada!",
+        title: "Tarefa atualizada!",
         description: "Suas alterações foram salvas permanentemente.",
       });
     } catch (error) {
@@ -130,10 +130,10 @@ const NotesPage = () => {
         note.id === noteId ? updatedNote : note
       ));
       toast({
-        title: completed ? "Anotação concluída!" : "Anotação reativada",
+        title: completed ? "Tarefa concluída!" : "Tarefa reativada",
         description: completed 
-          ? "Parabéns! Você completou esta anotação." 
-          : "Anotação marcada como pendente novamente.",
+          ? "Parabéns! Você completou esta tarefa." 
+          : "Tarefa marcada como pendente novamente.",
       });
     } catch (error) {
       toast({
@@ -153,7 +153,7 @@ const NotesPage = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-slate-600 mx-auto mb-4" />
-          <p className="text-lg text-slate-600">Carregando suas anotações...</p>
+          <p className="text-lg text-slate-600">Carregando suas tarefas...</p>
         </div>
       </div>
     );
@@ -184,11 +184,11 @@ const NotesPage = () => {
         <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="p-3 bg-slate-900 rounded-2xl shadow-lg">
-              <BookOpen className="h-8 w-8 text-white" />
+              <CheckSquare className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-slate-900">Minhas Anotações</h1>
+            <h1 className="text-4xl font-bold text-slate-900">Minhas Tarefas</h1>
           </div>
-          <p className="text-slate-600 text-lg mb-4">Organize suas ideias e pensamentos do dia a dia</p>
+          <p className="text-slate-600 text-lg mb-4">Organize e conclua suas tarefas do dia a dia</p>
           
           {/* Estatísticas */}
           {notes.length > 0 && (
@@ -210,7 +210,7 @@ const NotesPage = () => {
           <div className="relative">
             <Search className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
             <Input
-              placeholder="Buscar nas suas anotações..."
+              placeholder="Buscar nas suas tarefas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 h-12 text-lg border-slate-200 focus:border-slate-400 transition-colors"
@@ -255,7 +255,7 @@ const NotesPage = () => {
             className="h-12 px-6 text-lg bg-slate-900 hover:bg-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
             <Plus className="mr-2 h-5 w-5" />
-            {showAddForm ? 'Cancelar' : 'Nova Anotação'}
+            {showAddForm ? 'Cancelar' : 'Nova Tarefa'}
           </Button>
         </div>
 
@@ -273,22 +273,22 @@ const NotesPage = () => {
         {filteredNotes.length === 0 ? (
           <div className="text-center py-12">
             <div className="mb-4 opacity-50">
-              <BookOpen className="h-16 w-16 mx-auto text-slate-400" />
+              <CheckSquare className="h-16 w-16 mx-auto text-slate-400" />
             </div>
             <h3 className="text-xl font-semibold text-slate-600 mb-2">
               {searchTerm || filterStatus !== "all" 
-                ? 'Nenhuma nota encontrada' 
-                : 'Nenhuma anotação ainda'
+                ? 'Nenhuma tarefa encontrada' 
+                : 'Nenhuma tarefa ainda'
               }
             </h3>
             <p className="text-slate-500">
               {searchTerm 
                 ? 'Tente buscar por outros termos'
                 : filterStatus === "completed"
-                ? 'Você ainda não concluiu nenhuma anotação'
+                ? 'Você ainda não concluiu nenhuma tarefa'
                 : filterStatus === "pending"
-                ? 'Todas as suas anotações estão concluídas!'
-                : 'Clique em "Nova Anotação" para começar'
+                ? 'Todas as suas tarefas estão concluídas!'
+                : 'Clique em "Nova Tarefa" para começar'
               }
             </p>
           </div>

@@ -26,7 +26,7 @@ const AddNoteForm = ({ onSubmit, onCancel }) => {
       <CardHeader>
         <CardTitle className="text-xl text-slate-900 flex items-center gap-2">
           <Save className="h-5 w-5" />
-          Nova Anotação
+          Nova Tarefa
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -38,7 +38,7 @@ const AddNoteForm = ({ onSubmit, onCancel }) => {
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Digite o título da sua anotação..."
+              placeholder="Digite o título da sua tarefa..."
               className="border-slate-200 focus:border-slate-400 h-12"
               required
             />
@@ -46,12 +46,12 @@ const AddNoteForm = ({ onSubmit, onCancel }) => {
           
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">
-              Conteúdo
+              Descrição
             </label>
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Escreva sua anotação aqui..."
+              placeholder="Descreva sua tarefa aqui..."
               className="min-h-32 border-slate-200 focus:border-slate-400 resize-none"
               required
             />
@@ -63,7 +63,7 @@ const AddNoteForm = ({ onSubmit, onCancel }) => {
               className="flex-1 h-12 bg-slate-900 hover:bg-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               <Save className="mr-2 h-5 w-5" />
-              Salvar Anotação
+              Salvar Tarefa
             </Button>
             <Button 
               type="button"

@@ -65,7 +65,7 @@ const NoteCard = ({ note, onDelete, onEdit, onToggleComplete }) => {
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 className="font-semibold text-lg border-slate-200 focus:border-slate-400"
-                placeholder="Título da nota..."
+                placeholder="Título da tarefa..."
               />
             ) : (
               <h3 className={`font-semibold text-lg text-slate-900 line-clamp-2 ${
@@ -137,7 +137,7 @@ const NoteCard = ({ note, onDelete, onEdit, onToggleComplete }) => {
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
             className="min-h-24 border-slate-200 focus:border-slate-400 resize-none"
-            placeholder="Escreva sua anotação..."
+            placeholder="Descreva sua tarefa..."
           />
         ) : (
           <p className={`text-slate-700 leading-relaxed line-clamp-4 ${
