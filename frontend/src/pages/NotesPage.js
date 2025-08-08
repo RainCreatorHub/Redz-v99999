@@ -3,22 +3,46 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
-import { Plus, Search, BookOpen } from "lucide-react";
+import { Plus, Search, BookOpen, Loader2 } from "lucide-react";
 import { toast } from "../hooks/use-toast";
 import { Toaster } from "../components/ui/toaster";
 import NoteCard from "../components/NoteCard";
 import AddNoteForm from "../components/AddNoteForm";
-import { mockNotes } from "../data/mock";
+import { notesApi } from "../services/notesApi";
 
 const NotesPage = () => {
   const [notes, setNotes] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [filteredNotes, setFilteredNotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Carregar anotações do backend
+  const loadNotes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const notesData = await notesApi.getAllNotes();
+      setNotes(notesData);
+      toast({
+        title: "Anotações carregadas!",
+        description: `${notesData.length} anotação(ões) encontrada(s).`,
+      });
+    } catch (error) {
+      setError(error.message);
+      toast({
+        title: "Erro ao carregar",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Simular carregamento de dados do backend
-    setNotes(mockNotes);
+    loadNotes();
   }, []);
 
   useEffect(() => {
@@ -34,43 +58,89 @@ const NotesPage = () => {
     }
   }, [notes, searchTerm]);
 
-  const handleAddNote = (noteData) => {
-    const newNote = {
-      id: Date.now().toString(),
-      title: noteData.title,
-      content: noteData.content,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    setNotes(prev => [newNote, ...prev]);
-    setShowAddForm(false);
-    toast({
-      title: "Nota criada!",
-      description: "Sua anotação foi salva com sucesso.",
-    });
+  const handleAddNote = async (noteData) => {
+    try {
+      const newNote = await notesApi.createNote(noteData);
+      setNotes(prev => [newNote, ...prev]);
+      setShowAddForm(false);
+      toast({
+        title: "Nota criada!",
+        description: "Sua anotação foi salva permanentemente.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao criar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteNote = (noteId) => {
-    setNotes(prev => prev.filter(note => note.id !== noteId));
-    toast({
-      title: "Nota excluída",
-      description: "A anotação foi removida.",
-      variant: "destructive",
-    });
+  const handleDeleteNote = async (noteId) => {
+    try {
+      await notesApi.deleteNote(noteId);
+      setNotes(prev => prev.filter(note => note.id !== noteId));
+      toast({
+        title: "Nota excluída",
+        description: "A anotação foi removida permanentemente.",
+        variant: "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao excluir",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEditNote = (noteId, updatedData) => {
-    setNotes(prev => prev.map(note => 
-      note.id === noteId 
-        ? { ...note, ...updatedData, updatedAt: new Date().toISOString() }
-        : note
-    ));
-    toast({
-      title: "Nota atualizada!",
-      description: "Suas alterações foram salvas.",
-    });
+  const handleEditNote = async (noteId, updatedData) => {
+    try {
+      const updatedNote = await notesApi.updateNote(noteId, updatedData);
+      setNotes(prev => prev.map(note => 
+        note.id === noteId ? updatedNote : note
+      ));
+      toast({
+        title: "Nota atualizada!",
+        description: "Suas alterações foram salvas permanentemente.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-slate-600 mx-auto mb-4" />
+          <p className="text-lg text-slate-600">Carregando suas anotações...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <Card className="p-8 max-w-md">
+            <CardContent>
+              <h2 className="text-xl font-semibold text-red-600 mb-4">Erro de Conexão</h2>
+              <p className="text-slate-600 mb-6">{error}</p>
+              <Button onClick={loadNotes} className="w-full">
+                Tentar Novamente
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
